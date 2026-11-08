@@ -73,7 +73,7 @@ COPY ./cron .
 RUN pnpm install --frozen-lockfile;
 
 # ============================================
-# Stage 5: Run Next.js application
+# Stage 4: Get docker file for docker api
 # ============================================
 
 FROM docker:latest AS docker

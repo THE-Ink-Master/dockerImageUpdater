@@ -16,13 +16,13 @@ async function checkImageHash(repo: string, tag: string, digest: string) {
         "buildx",
         "imagetools",
         "inspect",
+        "--raw",
+        // "{{json .Manifest}}",
         `${repo}:${tag}`,
-        "--format",
-        "{{json .Manifest}}",
       ],
-      {
-        shell: false,
-      },
+      // {
+      //   shell: false,
+      // },
     );
 
     let output = "";
@@ -42,14 +42,15 @@ async function checkImageHash(repo: string, tag: string, digest: string) {
           new Error(`Docker process exited with code ${code}: ${errorOutput}`),
         );
       } else {
+        console.log(output.trim())
         resolve(JSON.parse(output.trim()).digest);
       }
     });
   });
 
-  console.log(dockerImages);
+  // console.log(dockerImages);
   // console.log(digest);
-  if (dockerImages === digest) {
+  if (JSON.parse(dockerImages).Manifest === digest) {
     console.log("No update");
     return;
   } else {
@@ -64,10 +65,10 @@ async function run(webhook: boolean) {
     const imagesJsonString = await new Promise<string>((resolve, reject) => {
       console.log("spawning?")
       const dockerImages = spawn(
-        // "docker image ls --digests --format {{json .}}",
+        // "docker image ls --digests --format json",
         // [],
         "docker",
-        ["image", "ls", "--digests", "--format", "{{json .}}"],
+        ["image", "ls", "--all","--format", "json", "--digests"],
         // ["image", "ls", "--digests"],
         // {
         //   shell: true,
