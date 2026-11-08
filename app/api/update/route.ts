@@ -8,6 +8,7 @@ if (process.env.NODE_ENV !== "production") {
 const ignoredRepos = process.env.IGNORED ? process.env.IGNORED?.split(",") : [];
 
 async function checkImageHash(repo: string, tag: string, digest: string) {
+  console.log("running")
   const dockerImages = await new Promise<string>((resolve, reject) => {
     const dockerImage = spawn(
       "docker",
@@ -16,7 +17,8 @@ async function checkImageHash(repo: string, tag: string, digest: string) {
         "imagetools",
         "inspect",
         `${repo}:${tag}`,
-        "--format={{json .Manifest}}",
+        "--format",
+        "{{json .Manifest}}",
       ],
       {
         shell: false,
@@ -40,19 +42,14 @@ async function checkImageHash(repo: string, tag: string, digest: string) {
           new Error(`Docker process exited with code ${code}: ${errorOutput}`),
         );
       } else {
-        const manifest = JSON.parse(output.trim());
-        if (manifest) {
-          resolve(manifest);
-        } else {
-          reject(new Error("No manifest found"));
-        }
+        resolve(JSON.parse(output.trim()).digest);
       }
     });
   });
 
-  // console.log(dockerImages.digest);
+  console.log(dockerImages);
   // console.log(digest);
-  if (dockerImages.digest === digest) {
+  if (dockerImages === digest) {
     console.log("No update");
     return;
   } else {
@@ -61,15 +58,20 @@ async function checkImageHash(repo: string, tag: string, digest: string) {
   }
 }
 
-export async function GET(request: Request) {
+async function run(webhook: boolean) {
   try {
+    console.log("we trying?")
     const imagesJsonString = await new Promise<string>((resolve, reject) => {
+      console.log("spawning?")
       const dockerImages = spawn(
+        // "docker image ls --digests --format {{json .}}",
+        // [],
         "docker",
-        ["images", "--digests", "--format={{json .}}"],
-        {
-          shell: false,
-        },
+        ["image", "ls", "--digests", "--format", "{{json .}}"],
+        // ["image", "ls", "--digests"],
+        // {
+        //   shell: true,
+        // },
       );
 
       let output = "";
@@ -91,6 +93,7 @@ export async function GET(request: Request) {
             ),
           );
         } else {
+          console.log(output)
           resolve(output);
         }
       });
@@ -116,23 +119,46 @@ export async function GET(request: Request) {
         if (response != null) {
           console.log(response);
           final.push(response);
+          const url: string = process.env.WEBHOOK_URL
+            ? process.env.WEBHOOK_URL
+            : "http://localhost:80/api/null";
           try {
-            await fetch(process.env.WEBHOOK_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                content: `An update for ${repo}:${tag} is available`,
-              }),
-            });
+            if (webhook === true) {
+              await fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  content: `An update for ${repo}:${tag} is available`,
+                }),
+              });
+            }
           } catch (err) {
             console.log("fetch FAILED");
           }
         }
       }
     }
+    console.log(final)
+    return final
+  } catch (err) {
+    console.error(err);
+  }
+}
 
+export async function GET(request: Request) {
+  try {
+    const final = await run(false);
+    return NextResponse.json({ status: 200, final });
+  } catch (err) {
+    return NextResponse.json({ status: 500, err });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const final = await run(true);
     return NextResponse.json({ status: 200, final });
   } catch (err) {
     return NextResponse.json({ status: 500, err });

@@ -57,7 +57,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 # ============================================
-# Stage 4: Get cron dependencies
+# Stage 3: Get cron dependencies
 # ============================================
 
 FROM node:26.13-alpine AS cron
@@ -73,10 +73,18 @@ COPY ./cron .
 RUN pnpm install --frozen-lockfile;
 
 # ============================================
-# Stage 3: Run Next.js application
+# Stage 5: Run Next.js application
+# ============================================
+
+FROM docker:latest AS docker
+
+# ============================================
+# Stage 5: Run Next.js application
 # ============================================
 
 FROM node:26.13-alpine AS runner
+
+COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
 
 # Set working directory
 WORKDIR /app
@@ -113,7 +121,7 @@ COPY --from=cron --chown=node:node /app/cron ./cron
 # COPY --from=builder --chown=node:node /app/.next/cache ./.next/cache
 
 # Switch to non-root user for security best practices
-USER node
+# USER node
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
@@ -122,7 +130,7 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 # Expose port 80 to allow HTTP traffic
 EXPOSE 80
 
-COPY ./server-init.js ./
+COPY ./init-server.js ./
 
 # Start Next.js standalone server
-CMD ["node", "server-init.js"]
+CMD ["node", "init-server.js"]

@@ -29,7 +29,9 @@ try {
       try {
         checkNum += 1;
         console.log(`Running check #${checkNum}...`);
-        await fetch("http://localhost:80/api/update");
+        await fetch("http://localhost:80/api/update", {
+          method: "POST"
+        });
       } catch (err) {
         console.error(err)
       }
