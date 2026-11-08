@@ -1,0 +1,6 @@
+services:
+  images:
+    image: node:26.13-alpine
+    build: .
+    container_name: images
+    restart: unless-stopped
