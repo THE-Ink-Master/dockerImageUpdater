@@ -29,10 +29,19 @@ services:
   updater:
     image: inkytheinkmaster/dockerImageUpdater:latest
     container_name: imageupdater
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - TZ: 
+      - TZ: Australia/Canberra
+      - IGNORED:"example/example:latest,docker/docker:latest"
       - WEBHOOK_URL: "" # The webhook url that receives a POST request when an update is avaliable
     restart: unless-stopped
+```
+
+Or run the docker run command:
+
+```bash
+docker run -d -e IGNORED="example/example:latest,docker/docker:latest" -e WEBHOOK_URL=""
 ```
 
 ### Running with development server

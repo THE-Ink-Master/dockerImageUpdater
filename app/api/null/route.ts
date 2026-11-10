@@ -15,3 +15,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: 500, err });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    return NextResponse.json({ status: 200 });
+  } catch (err) {
+    return NextResponse.json({ status: 500, err });
+  }
+}
+
+export async function HEAD(request: Request) {
+  try {
+    return NextResponse.json({ status: 200 });
+  } catch (err) {
+    return NextResponse.json({ status: 500, err });
+  }
+}

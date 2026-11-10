@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { spawn } from "child_process";
+import http from "node:http";
 import { loadEnvFile } from "node:process";
 if (process.env.NODE_ENV !== "production") {
   loadEnvFile();
@@ -7,118 +7,126 @@ if (process.env.NODE_ENV !== "production") {
 
 const ignoredRepos = process.env.IGNORED ? process.env.IGNORED?.split(",") : [];
 
-async function checkImageHash(repo: string, tag: string, digest: string) {
-  console.log("running")
-  const dockerImages = await new Promise<string>((resolve, reject) => {
-    const dockerImage = spawn(
-      "docker",
-      [
-        "buildx",
-        "imagetools",
-        "inspect",
-        "--raw",
-        // "{{json .Manifest}}",
-        `${repo}:${tag}`,
-      ],
-      // {
-      //   shell: false,
-      // },
-    );
+async function getHashFromGhcr(namespace: string, repo: string, tag: string) {
 
-    let output = "";
-    let errorOutput = "";
+  const tokenResponse = await fetch(`https://ghcr.io/token?scope=repository:${namespace}/${repo}:pull`, {
+    method: "GET"
+  })
 
-    dockerImage.stdout.on("data", (data) => {
-      output += data.toString();
-    });
+  const token = (await tokenResponse.json()).token;
 
-    dockerImage.stderr.on("data", (data) => {
-      errorOutput += data.toString();
-    });
+  const packagesRes = await fetch(`https://ghcr.io/v2/${namespace}/${repo}/manifests/${tag}`, {
+    method: "GET",
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': [
+        'application/vnd.oci.image.index.v1+json',
+        'application/vnd.oci.image.manifest.v1+json',
+        'application/vnd.docker.distribution.manifest.v2+json',
+        'application/vnd.docker.distribution.manifest.list.v2+json'
+      ].join(',')
+    }
+  })
+  const digest = packagesRes.headers.get('Docker-Content-Digest');
 
-    dockerImage.on("close", (code) => {
-      if (code !== 0) {
-        reject(
-          new Error(`Docker process exited with code ${code}: ${errorOutput}`),
-        );
-      } else {
-        console.log(output.trim())
-        resolve(JSON.parse(output.trim()).digest);
-      }
-    });
-  });
+  if (!digest){
+    return {
+      error: "Not Found"
+    }
+  }
+  return {
+    digest: digest
+  }
+}
 
-  // console.log(dockerImages);
-  // console.log(digest);
-  if (JSON.parse(dockerImages).Manifest === digest) {
+async function getHashFromDockerHub(namespace: string, repo: string, tag: string) {
+  const response = await fetch(`https://hub.docker.com/v2/namespaces/${namespace}/repositories/${repo}/tags/${tag}`, {
+    method: "GET"
+  })
+
+  const data = await response.json();
+
+  let returnData;
+  for (let i = 0; i < data.images.length; i++) {
+    const current = data.images[i]
+    if (current.architecture === "amd64") {
+      returnData = current;
+    }
+  }
+  if (!returnData) {
+    return;
+  } else {
+    return data;
+  }
+}
+
+async function checkImageHash(repo: string, hash: string, digest: string) {
+  if (hash === digest) {
     console.log("No update");
     return;
   } else {
-    console.log(`update for: ${repo}:${tag}`);
-    return `update for: ${repo}:${tag}`;
+    console.log(`update for: ${repo}`);
+    console.log(`Current hash: ${digest}, remote hash: ${hash}`);
+    return `update for: ${repo}`;
   }
 }
 
 async function run(webhook: boolean) {
   try {
-    console.log("we trying?")
-    const imagesJsonString = await new Promise<string>((resolve, reject) => {
-      console.log("spawning?")
-      const dockerImages = spawn(
-        // "docker image ls --digests --format json",
-        // [],
-        "docker",
-        ["image", "ls", "--all","--format", "json", "--digests"],
-        // ["image", "ls", "--digests"],
-        // {
-        //   shell: true,
-        // },
-      );
-
-      let output = "";
-      let errorOutput = "";
-
-      dockerImages.stdout.on("data", (data) => {
-        output += data.toString();
+    const images = await new Promise<string>((resolve, reject) => {
+      const dockerList = {
+        socketPath: "/var/run/docker.sock",
+        path: "/v1.56/images/json",
+        method: "GET",
+      };
+      const req = http.request(dockerList, (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          try {
+            resolve(data);
+          } catch (err) {
+            console.error(err);
+            reject(err);
+          }
+        });
       });
-
-      dockerImages.stderr.on("data", (data) => {
-        errorOutput += data.toString();
-      });
-
-      dockerImages.on("close", (code) => {
-        if (code !== 0) {
-          reject(
-            new Error(
-              `Docker process exited with code ${code}: ${errorOutput}`,
-            ),
-          );
-        } else {
-          console.log(output)
-          resolve(output);
-        }
-      });
+      req.on("error", (err) => console.log(`Error: ${err}`));
+      req.end();
     });
 
-    const localImages = imagesJsonString
-      .trim()
-      .split("\n")
-      .filter((line) => line.length > 0)
-      .map((line) => JSON.parse(line));
+    const localImages = JSON.parse(images);
 
     const final = [];
-    // console.log(localImages)
     for (let i = 0; i < localImages.length; i++) {
-      // console.log(localImages[i]);
-      const repo = localImages[i].Repository;
-      const tag = localImages[i].Tag;
-      const digest = localImages[i].Digest;
-      console.log(repo, tag, digest);
-      console.log(ignoredRepos.includes(repo));
+      const repo = localImages[i].RepoTags[0];
+      if (ignoredRepos.includes(repo) || !repo.includes("/")){
+        console.log("Ignored or invalid!")
+        console.log(repo)
+        continue;
+      }
+      let hash;
+      if (repo.includes("ghcr.io")) {
+        const image = repo.split("/");
+        const namespace = image[1];
+        const repoAndTag = image[2];
+        const repository = repoAndTag.split(":")[0];
+        const tag = (repoAndTag.split(":"))[1];
+        const returned = await getHashFromGhcr(namespace, repository, tag);
+        hash = returned.digest;
+      } else {
+        const image = repo.split("/");
+        const namespace = image[0];
+        const repoAndTag = image[1];
+        const repository = (repoAndTag.split(":"))[0];
+        const tag = repoAndTag.split(":")[1];
+        const returned = await getHashFromDockerHub(namespace, repository, tag);
+        hash = returned.digest;
+      }
+      const digest = localImages[i].Id;
       if (!ignoredRepos.includes(repo)) {
-        const response = await checkImageHash(repo, tag, digest);
+        const response = await checkImageHash(repo, hash, digest);
         if (response != null) {
-          console.log(response);
           final.push(response);
           const url: string = process.env.WEBHOOK_URL
             ? process.env.WEBHOOK_URL
@@ -131,7 +139,7 @@ async function run(webhook: boolean) {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  content: `An update for ${repo}:${tag} is available`,
+                  content: `An update for ${repo} is available`,
                 }),
               });
             }
@@ -141,8 +149,7 @@ async function run(webhook: boolean) {
         }
       }
     }
-    console.log(final)
-    return final
+    return final;
   } catch (err) {
     console.error(err);
   }

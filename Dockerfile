@@ -73,10 +73,10 @@ COPY ./cron .
 RUN pnpm install --frozen-lockfile;
 
 # ============================================
-# Stage 4: Get docker file for docker api
+# Stage 4: Get docker for docker api
 # ============================================
 
-FROM docker:latest AS docker
+FROM docker:29 AS docker
 
 # ============================================
 # Stage 5: Run Next.js application
@@ -99,6 +99,11 @@ ENV HOSTNAME="0.0.0.0"
 # Uncomment the following line in case you want to disable telemetry during the run time.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN mkdir cron
+RUN chown node:node cron
+
+COPY --from=cron --chown=node:node /app/cron ./cron
+
 # Copy production assets
 COPY --from=builder --chown=node:node /app/public ./public
 
@@ -110,11 +115,6 @@ RUN chown node:node .next
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
-
-RUN mkdir cron
-RUN chown node:node cron
-
-COPY --from=cron --chown=node:node /app/cron ./cron
 
 # If you want to persist the fetch cache generated during the build so that
 # cached responses are available immediately on startup, uncomment this line:
