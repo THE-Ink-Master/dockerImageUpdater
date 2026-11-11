@@ -1,6 +1,6 @@
 # Docker App
 
-This is a [Next.js](https://nextjs.org) made to be run within docker.
+This is a Node.js project made to be run within docker.
 
 ![Build](https://github.com/THE-Ink-Master/dockerImageUpdater/actions/workflows/build.yml/badge.svg)
 ![Push to DockerHub](https://github.com/THE-Ink-Master/dockerImageUpdater/actions/workflows/docker-publish.yml/badge.svg)
@@ -61,27 +61,8 @@ cd ./dockerImageUpdater
 pnpm install
 ```
 
-Then run the development server:
+Then run the application:
 
 ```bash
-pnpm dev
+pnpm start
 ```
-
-or if you don't want the cron job active:
-
-```bash
-pnpm nextDev
-```
-
-Open [http://localhost:80](http://localhost:80) with your browser to see the result.
-
-## Next.js
-
-This project uses Next.js
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!

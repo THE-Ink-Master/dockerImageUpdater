@@ -7,8 +7,6 @@ services:
     image: docker:29
     container_name: image
     restart: unless-stopped
-    volumes:
-      - 
 
 # This file is only here to allow GitHub dependabot to make a pull request when an update for an image is avaliable
     

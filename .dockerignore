@@ -12,13 +12,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Next.js build outputs (always generated during `next build`)
-.next/
-out/
-dist/
-build/
-.vercel/
-
 # Tests and testing output (not needed in production images)
 coverage/
 .nyc_output/
@@ -71,6 +64,7 @@ docker-compose*.yml
 # Documentation
 *.md
 docs/
+example/
 
 # CI/CD configuration files
 .github/
@@ -88,9 +82,6 @@ Jenkinsfile
 .turbo/
 .tmp/
 .temp/
-
-# TypeScript build metadata
-*.tsbuildinfo
 
 # Sensitive or unnecessary configuration files
 *.pem
@@ -114,31 +105,3 @@ stylelint.config.*
 ehthumbs.db
 Thumbs.db
 Desktop.ini
-
-# AI/ML tool metadata and configs
-.cursor/
-.cursorrules
-.copilot/
-.copilotignore
-.github/copilot/
-.gemini/
-.anthropic/
-.kiro
-.claude
-AGENTS.md
-.agents/
-
-# AI-generated temp files
-*.aider*
-*.copilot*
-*.chatgpt*
-*.claude*
-*.gemini*
-*.openai*
-*.anthropic*
-
-# Other
-example/
-
-cron/node_modules
-cron/.env
