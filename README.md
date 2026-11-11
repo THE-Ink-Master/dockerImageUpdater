@@ -13,10 +13,10 @@ This is a [Next.js](https://nextjs.org) made to be run within docker.
 ![License](https://img.shields.io/github/license/THE-Ink-Master/dockerImageUpdater?logo=github&amp;label=License)
 ![Downloads](https://img.shields.io/github/downloads/THE-Ink-Master/dockerImageUpdater/total?logo=github&amp;label=GitHub%20Downloads)
 
-![Docker Pulls](https://img.shields.io/docker/pulls/inkytheinkmaster/dockerImageUpdater?logo=docker&amp;label=Docker%20pulls)
-![Docker stars](https://img.shields.io/docker/stars/inkytheinkmaster/dockerImageUpdater?logo=docker&amp;label=Docker%20stars)
-![Docker image size](https://img.shields.io/docker/image-size/inkytheinkmaster/dockerImageUpdater/latest?logo=docker&amp;label=Docker%20image%20size)
-![Version](https://img.shields.io/docker/v/inkytheinkmaster/dockerImageUpdater/latest?logo=docker&amp;label=Docker%20image%20version)
+![Docker Pulls](https://img.shields.io/docker/pulls/inkytheinkmaster/dockerimageupdater?logo=docker&amp;label=Docker%20pulls)
+![Docker stars](https://img.shields.io/docker/stars/inkytheinkmaster/dockerimageupdater?logo=docker&amp;label=Docker%20stars)
+![Docker image size](https://img.shields.io/docker/image-size/inkytheinkmaster/dockerimageupdater/latest?logo=docker&amp;label=Docker%20image%20size)
+![Version](https://img.shields.io/docker/v/inkytheinkmaster/dockerimageupdater/latest?logo=docker&amp;label=Docker%20image%20version)
 
 ## Getting Started
 
@@ -27,7 +27,7 @@ To run this project within docker, make a docker-compose.yml file:
 ```bash
 services:
   updater:
-    image: inkytheinkmaster/dockerImageUpdater:latest
+    image: inkytheinkmaster/dockerimageupdater:latest
     container_name: imageupdater
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -42,7 +42,7 @@ services:
 Or run the docker run command:
 
 ```bash
-docker run -d -e IGNORED="example/example:latest,docker/docker:latest" -e TZ=Australia/Canberra -e WEBHOOK_URL="" -e TIME=8 -v /var/run/docker.sock:/var/run/docker.sock --name image-update-checker --restart=always inkytheinkmaster/dockerImageUpdater:latest
+docker run -d -e IGNORED="example/example:latest,docker/docker:latest" -e TZ=Australia/Canberra -e WEBHOOK_URL="" -e TIME=8 -v /var/run/docker.sock:/var/run/docker.sock --name image-update-checker --restart=always inkytheinkmaster/dockerimageupdater:latest
 ```
 
 ### Running with development server
