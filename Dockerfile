@@ -21,12 +21,12 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./ 
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./ 
 
 RUN pnpm install --frozen-lockfile;
 
 # ============================================
-# Stage 3: Node deps
+# Stage 3: Node runner
 # ============================================
 
 FROM node:26.13-alpine AS runner

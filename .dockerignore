@@ -64,7 +64,6 @@ docker-compose*.yml
 # Documentation
 *.md
 docs/
-example/
 
 # CI/CD configuration files
 .github/

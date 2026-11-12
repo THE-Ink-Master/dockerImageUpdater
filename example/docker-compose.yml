@@ -1,9 +1,0 @@
-services:
-  images:
-    image: inkytheinkmaster/dockerImageUpdater:latest
-    container_name: imageupdater
-    environment:
-      - TZ=value
-      - WEBHOOK_URL
-      - IGNORED="testing,nginx"
-    restart: unless-stopped
